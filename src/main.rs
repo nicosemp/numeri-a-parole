@@ -1,5 +1,7 @@
 use std::env;
 
+mod usage;
+
 const TENTHS: [&str; 10] = [
     "",
     "",
@@ -86,19 +88,20 @@ fn print_numbers_words(mut num: usize) -> Vec<&'static str> {
 fn main() {
     // Read command line arguments
     let args: Vec<String> = env::args().collect();
+
+    if args.len() == 1 || (args.len() == 2 && args[1] == "help") {
+        usage::print_usage();
+        return;
+    }
+
     let min = (&args[1]).to_string();
-    let max = (&args[2]).to_string();
+    let max = match args.len() {
+        x if x > 2 => (&args[2]).to_string(),
+        _ => min.clone(),
+    };
+
     let min = input_to_number(min);
     let max = input_to_number(max);
-    println!("You entered: {}", min);
-    println!("You entered: {}", max);
-
-    // Prompt the user to enter a number
-    // println!("Please enter a number: ");
-    // let input = String::new();
-    // std::io::stdin().read_line(&mut input).unwrap_or(0);
-
-    // let number = input_to_number(input);
 
     let mut max_len: usize = 0;
     let mut longest_number = String::new();
@@ -113,5 +116,5 @@ fn main() {
         }
     }
 
-    println!("{}", longest_number);
+    println!("Longest number: {}", longest_number);
 }
