@@ -12,7 +12,7 @@ pub const TENS: [&str; 10] = [
 ];
 
 pub const UNDER_TWENTY: [&str; 20] = [
-    "zero",
+    "",
     "uno",
     "due",
     "tre",

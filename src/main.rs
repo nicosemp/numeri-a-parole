@@ -3,6 +3,55 @@ use std::env;
 mod constants;
 mod usage;
 
+fn parse_input() -> (u128, u128, bool) {
+    // Read command line arguments
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() < 2 || args[1] == "help" {
+        usage::print_usage();
+        return (0, 0, true);
+    }
+
+    if args.len() > 3 {
+        usage::print_too_many_args_warning();
+    }
+
+    let min = (&args[1]).to_string();
+    let max = match args.len() {
+        x if x > 2 => (&args[2]).to_string(),
+        _ => min.clone(),
+    };
+
+    let min = match min.trim().parse::<u128>() {
+        Ok(n) => n,
+        Err(e) => {
+            println!("Error! Min is not valid: {e}");
+            return (0, 0, true);
+        }
+    };
+    let max = match max.trim().parse::<u128>() {
+        Ok(n) => n,
+        Err(e) => {
+            println!("Error! Max is not valid: {e}");
+            return (0, 0, true);
+        }
+    };
+
+    if min > max {
+        println!("Error! Min must be less or equal than Max.");
+        return (0, 0, true);
+    }
+
+    if min == max {
+        println!("number: {min}\n");
+    } else {
+        println!("min: {min}");
+        println!("max: {max}\n");
+    }
+
+    (min, max, false)
+}
+
 fn split_triplets(num: u128) -> Vec<usize> {
     let num_str = num.to_string();
     let reversed: String = num_str.chars().rev().collect();
@@ -55,29 +104,29 @@ fn elaborate_units_word(units_digit: usize) -> String {
 fn triplet_to_word(triplet: usize, triplet_index: usize) -> String {
     let mut words: Vec<&str> = vec![];
 
-    // Suffix for 'mila', 'milioni', 'miliardi', ...
-    let word_suffix_end = if triplet == 1 {
+    // Magnitude for 'mila', 'milioni', 'miliardi', ...
+    let magnitude_ending_char = if triplet == 1 {
         if triplet_index % 2 == 0 {
-            "e"
+            "e "
         } else {
-            "o"
+            "o "
         }
     } else {
-        "i"
+        "i "
     };
-    let word_suffix = match triplet_index {
+    let magnitude = match triplet_index {
         1 => "mila".to_string(),
-        2 => [" milion", word_suffix_end, " "].concat(),
-        3 => [" miliard", word_suffix_end, " "].concat(),
-        4 => [" bilion", word_suffix_end, " "].concat(),
-        5 => [" biliard", word_suffix_end, " "].concat(),
-        6 => [" trilion", word_suffix_end, " "].concat(),
-        7 => [" triliard", word_suffix_end, " "].concat(),
-        8 => [" quadrilion", word_suffix_end, " "].concat(),
-        9 => [" quadriliard", word_suffix_end, " "].concat(),
-        10 => [" quintilion", word_suffix_end, " "].concat(),
-        11 => [" quintiliard", word_suffix_end, " "].concat(),
-        12 => [" sestilion", word_suffix_end, " "].concat(),
+        2 => [" milion", magnitude_ending_char].concat(),
+        3 => [" miliard", magnitude_ending_char].concat(),
+        4 => [" bilion", magnitude_ending_char].concat(),
+        5 => [" biliard", magnitude_ending_char].concat(),
+        6 => [" trilion", magnitude_ending_char].concat(),
+        7 => [" triliard", magnitude_ending_char].concat(),
+        8 => [" quadrilion", magnitude_ending_char].concat(),
+        9 => [" quadriliard", magnitude_ending_char].concat(),
+        10 => [" quintilion", magnitude_ending_char].concat(),
+        11 => [" quintiliard", magnitude_ending_char].concat(),
+        12 => [" sestilion", magnitude_ending_char].concat(),
         _ => String::new(),
     };
 
@@ -93,8 +142,7 @@ fn triplet_to_word(triplet: usize, triplet_index: usize) -> String {
         }
 
         let mut word = "un".to_owned();
-
-        word.push_str(&word_suffix);
+        word.push_str(&magnitude);
         return word;
     }
 
@@ -110,7 +158,7 @@ fn triplet_to_word(triplet: usize, triplet_index: usize) -> String {
     let two_digit_remainder = triplet % 100;
     if two_digit_remainder < 20 {
         words.push(constants::UNDER_TWENTY[two_digit_remainder]);
-        words.push(&word_suffix);
+        words.push(&magnitude);
         return words.join("");
     };
 
@@ -122,58 +170,22 @@ fn triplet_to_word(triplet: usize, triplet_index: usize) -> String {
     let units_word = elaborate_units_word(units_digit);
     words.push(&units_word);
 
-    // Add suffix at the end
-    words.push(&word_suffix);
+    // Add magnitude at the end
+    words.push(&magnitude);
 
     return words.join("");
 }
 
-fn main() {
-    // Read command line arguments
-    let args: Vec<String> = env::args().collect();
-
-    // TODO: Test too many/few arguments
-    // TODO: Test invalid input (only digits 0-9 should be allowed)
-    // TODO: Test numbers too large
-    // TODO: Test min greater than max
-    // TODO: Test negative numbers
-    if args.len() == 1 || (args.len() == 2 && args[1] == "help") {
-        usage::print_usage();
-        return;
-    }
-
-    let min = (&args[1]).to_string();
-    let max = match args.len() {
-        x if x > 2 => (&args[2]).to_string(),
-        _ => min.clone(),
-    };
-
-    let min = match min.trim().parse::<u128>() {
-        Ok(n) => n,
-        Err(e) => {
-            println!("Error! Min is not valid: {e}");
-            return;
-        }
-    };
-    let max = match max.trim().parse::<u128>() {
-        Ok(n) => n,
-        Err(e) => {
-            println!("Error! Max is not valid: {e}");
-            return;
-        }
-    };
-
-    if min == max {
-        println!("number: {}", min);
-    } else {
-        println!("min: {}", min);
-        println!("max: {}", max);
-    }
-
+fn loop_numbers(min: u128, max: u128) {
     let mut max_len: usize = 0;
     let mut longest_number = String::new();
 
     for number in min..=max {
+        if number == 0 {
+            println!("{number} = zero");
+            continue;
+        }
+
         let triplets = split_triplets(number);
 
         let mut triplet_words: Vec<String> = vec![];
@@ -196,6 +208,15 @@ fn main() {
     }
 
     if min != max {
-        println!("Longest number: {}", longest_number);
+        println!("\nLongest number (first encountered): {longest_number}");
     }
+}
+
+fn main() {
+    let (min, max, is_error) = parse_input();
+    if is_error {
+        return;
+    }
+
+    loop_numbers(min, max);
 }
