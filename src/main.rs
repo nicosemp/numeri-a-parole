@@ -129,8 +129,6 @@ fn triplet_to_word(triplet: usize, triplet_index: usize) -> String {
 }
 
 fn main() {
-    println!("{}", u128::MAX);
-
     // Read command line arguments
     let args: Vec<String> = env::args().collect();
 
@@ -150,15 +148,27 @@ fn main() {
         _ => min.clone(),
     };
 
+    let min = match min.trim().parse::<u128>() {
+        Ok(n) => n,
+        Err(e) => {
+            println!("Error! Min is not valid: {e}");
+            return;
+        }
+    };
+    let max = match max.trim().parse::<u128>() {
+        Ok(n) => n,
+        Err(e) => {
+            println!("Error! Max is not valid: {e}");
+            return;
+        }
+    };
+
     if min == max {
         println!("number: {}", min);
     } else {
         println!("min: {}", min);
         println!("max: {}", max);
     }
-
-    let min = min.trim().parse::<u128>().unwrap_or(0);
-    let max = max.trim().parse::<u128>().unwrap_or(0);
 
     let mut max_len: usize = 0;
     let mut longest_number = String::new();
@@ -179,11 +189,13 @@ fn main() {
         println!("{number} = {number_word}");
 
         // Save longest number
-        if number_word.len() > max_len {
+        if min != max && number_word.len() > max_len {
             max_len = number_word.len();
             longest_number = number_word;
         }
     }
 
-    println!("Longest number: {}", longest_number);
+    if min != max {
+        println!("Longest number: {}", longest_number);
+    }
 }
