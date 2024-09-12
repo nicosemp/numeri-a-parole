@@ -1,5 +1,5 @@
 pub fn print_usage() {
-    println!("Usage: cargo r min [max]\n");
+    println!("Usage: ./numeri-a-parole min [max]\n");
     println!("Min only:");
     println!("\tcargo r 20");
     println!("\t=> venti\n");
