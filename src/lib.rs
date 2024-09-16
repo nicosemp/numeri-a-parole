@@ -53,17 +53,16 @@ pub fn parse_input() -> (u128, u128, bool) {
 }
 
 fn split_triplets(num: u128) -> Vec<usize> {
-    let num_str = num.to_string();
-    let reversed: String = num_str.chars().rev().collect();
-    let chunks: Vec<usize> = reversed
-        .as_bytes()
-        .chunks(3)
-        .map(|chunk| {
-            let chunk_str: String = chunk.iter().rev().map(|&b| b as char).collect();
-            chunk_str.parse::<usize>().unwrap()
-        })
-        .collect();
-    chunks
+    let mut remaining = num;
+    let mut triplets: Vec<usize> = vec![];
+
+    while remaining > 0 {
+        let triplet: usize = (remaining % 1000).try_into().unwrap();
+        triplets.push(triplet);
+        remaining /= 1000;
+    }
+
+    triplets
 }
 
 fn elaborate_hundreds_digit(hundreds_digit: usize, tens_digit: usize) -> String {
