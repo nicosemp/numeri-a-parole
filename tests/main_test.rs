@@ -17,14 +17,27 @@ fn test_zero() {
 }
 
 #[test]
-fn test_one_and_two() {
-    let output = run_with_args(&["1", "2"]);
+fn test_one() {
+    let output = run_with_args(&["1"]);
     assert!(output.contains("uno"));
-    assert!(output.contains("due"));
 }
 
 #[test]
 fn test_mille() {
     let output = run_with_args(&["1000"]);
     assert!(output.contains("mille\n"));
+}
+
+#[test]
+fn test_one_million() {
+    let output = run_with_args(&["1000000"]);
+    assert!(output.contains("un milione"));
+}
+
+#[test]
+fn test_complex_big_number() {
+    let output = run_with_args(&["123456789"]);
+    assert!(
+        output.contains("centoventitre milioni quattrocentocinquantaseimilasettecentottantanove")
+    );
 }

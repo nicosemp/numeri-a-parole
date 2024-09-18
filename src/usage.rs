@@ -13,5 +13,5 @@ pub fn print_usage() {
 }
 
 pub fn print_too_many_args_warning() {
-    println!("\nWarn! Too many arguments: anything over the 2nd is discarded.\n");
+    println!("\nWarn! Too many arguments: anything more than 1 is discarded.\n");
 }

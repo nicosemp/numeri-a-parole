@@ -3,53 +3,63 @@ use std::env;
 mod constants;
 mod usage;
 
-pub fn parse_input() -> (u128, u128, bool) {
-    // Read command line arguments
+/// Read command line arguments
+pub fn read_args() -> String {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 || args[1] == "help" {
         usage::print_usage();
-        return (0, 0, true);
+        std::process::exit(1);
     }
 
     if args.len() > 3 {
         usage::print_too_many_args_warning();
     }
 
-    let min = (&args[1]).to_string();
-    let max = match args.len() {
-        x if x > 2 => (&args[2]).to_string(),
-        _ => min.clone(),
-    };
-
-    let min = match min.trim().parse::<u128>() {
-        Ok(n) => n,
-        Err(e) => {
-            println!("Error! Min is not valid: {e}");
-            return (0, 0, true);
-        }
-    };
-    let max = match max.trim().parse::<u128>() {
-        Ok(n) => n,
-        Err(e) => {
-            println!("Error! Max is not valid: {e}");
-            return (0, 0, true);
-        }
-    };
-
-    if min > max {
-        println!("Error! Min must be less or equal than Max.");
-        return (0, 0, true);
+    if args.len() == 3 {
+        println!("2 ARGUMENTS NOT YET SUPPORTED!");
+        std::process::exit(1);
     }
 
-    if min == max {
-        println!("number: {min}\n");
-    } else {
-        println!("min: {min}");
-        println!("max: {max}\n");
+    args[1].clone() //, args[2].clone())
+}
+
+pub fn get_number_sign(number_str: String) -> (String, bool) {
+    let first_char = &number_str[..1];
+    if first_char == "-" {
+        let number_without_sign = number_str.chars().skip(1).collect();
+        return (number_without_sign, true);
     }
 
-    (min, max, false)
+    (number_str, false)
+}
+
+pub fn parse_string_to_numbers(mut number_str: String) -> Vec<u128> {
+    let mut number_parts: Vec<u128> = vec![];
+
+    while number_str.len() > 0 {
+        let split_pos = if number_str.len() > 30 {
+            number_str.len() - 30
+        } else {
+            0
+        };
+
+        let last_thirty_chars = (&number_str[split_pos..]).to_string();
+
+        let number_part = match last_thirty_chars.trim().parse::<u128>() {
+            Ok(n) => n,
+            Err(e) => {
+                println!("Error! Number is not valid: {e}");
+                std::process::exit(1);
+            }
+        };
+
+        number_parts.push(number_part);
+
+        number_str = number_str.split_at(split_pos).0.to_string();
+    }
+
+    number_parts
 }
 
 fn split_triplets(num: u128) -> Vec<usize> {
@@ -125,6 +135,33 @@ fn triplet_to_word(triplet: usize, triplet_index: usize) -> String {
         10 => [" quintilion", magnitude_ending_char].concat(),
         11 => [" quintiliard", magnitude_ending_char].concat(),
         12 => [" sestilion", magnitude_ending_char].concat(),
+        13 => [" settiliard", magnitude_ending_char].concat(),
+        14 => [" ottilion", magnitude_ending_char].concat(),
+        15 => [" ottiliard", magnitude_ending_char].concat(),
+        16 => [" nonilion", magnitude_ending_char].concat(),
+        17 => [" noniliard", magnitude_ending_char].concat(),
+        18 => [" decilion", magnitude_ending_char].concat(),
+        19 => [" deciliard", magnitude_ending_char].concat(),
+        20 => [" undecilion", magnitude_ending_char].concat(),
+        21 => [" undeciliard", magnitude_ending_char].concat(),
+        22 => [" dodecilion", magnitude_ending_char].concat(),
+        23 => [" dodeciliard", magnitude_ending_char].concat(),
+        24 => [" tridecilion", magnitude_ending_char].concat(),
+        25 => [" trideciliard", magnitude_ending_char].concat(),
+        26 => [" quattordicilion", magnitude_ending_char].concat(),
+        27 => [" quattordiciliard", magnitude_ending_char].concat(),
+        28 => [" quindicilion", magnitude_ending_char].concat(),
+        29 => [" quindiciliard", magnitude_ending_char].concat(),
+        30 => [" sedicilion", magnitude_ending_char].concat(),
+        31 => [" sediciliard", magnitude_ending_char].concat(),
+        32 => [" diciassettilion", magnitude_ending_char].concat(),
+        33 => [" diciassettiliard", magnitude_ending_char].concat(),
+        34 => [" diciottilion", magnitude_ending_char].concat(),
+        35 => [" diciottiliard", magnitude_ending_char].concat(),
+        36 => [" diciannovilion", magnitude_ending_char].concat(),
+        37 => [" diciannoviliard", magnitude_ending_char].concat(),
+        38 => [" ventilion", magnitude_ending_char].concat(),
+        39 => [" ventiliard", magnitude_ending_char].concat(),
         _ => String::new(),
     };
 
@@ -174,40 +211,37 @@ fn triplet_to_word(triplet: usize, triplet_index: usize) -> String {
     return words.join("");
 }
 
-pub fn loop_numbers(min: u128, max: u128) {
-    let mut max_len: usize = 0;
-    let mut longest_number = String::new();
-
-    for number in min..=max {
-        if number == 0 {
-            println!("{number} = zero");
-            continue;
-        }
-
-        let triplets = split_triplets(number);
-
-        let mut triplet_words: Vec<String> = vec![];
-
-        for (i, triplet) in triplets.iter().enumerate() {
-            let triplet_word = triplet_to_word(*triplet, i);
-            triplet_words.push(triplet_word);
-        }
-
-        let triplet_words_reversed: Vec<String> = triplet_words.into_iter().rev().collect();
-        let number_word = triplet_words_reversed.concat();
-
-        println!("{number} = {number_word}");
-
-        // Save longest number
-        if min != max && number_word.len() > max_len {
-            max_len = number_word.len();
-            longest_number = number_word;
-        }
+fn number_to_words(number: u128, delta: usize) -> String {
+    if number == 0 {
+        println!("{number} = zero");
+        return "".to_string();
     }
 
-    if min != max {
-        println!("\nLongest number (first encountered): {longest_number}");
+    let triplets = split_triplets(number);
+
+    let mut triplet_words: Vec<String> = vec![];
+
+    for (i, triplet) in triplets.iter().enumerate() {
+        let triplet_word = triplet_to_word(*triplet, i + delta);
+        triplet_words.push(triplet_word);
     }
+
+    let triplet_words_reversed: Vec<String> = triplet_words.into_iter().rev().collect();
+    let number_words = triplet_words_reversed.concat();
+
+    number_words
+}
+
+pub fn number_parts_to_words(number_parts: Vec<u128>) -> String {
+    let mut words = String::new();
+
+    for (i, part) in number_parts.iter().enumerate() {
+        let part_words = number_to_words(*part, 10 * i);
+        // println!("aaa {}", part_words);
+        words.insert_str(0, &part_words);
+    }
+
+    words
 }
 
 #[cfg(test)]
@@ -273,10 +307,10 @@ mod tests {
         assert_eq!(result, "centottantotto miliardi ");
     }
 
-    #[test]
-    fn test_loop_numbers() {
-        // This function prints output, so you might want to capture the output and test it.
-        // For simplicity, we are just calling it here.
-        loop_numbers(1, 2);
-    }
+    // #[test]
+    // fn test_loop_numbers() {
+    //     // This function prints output, so you might want to capture the output and test it.
+    //     // For simplicity, we are just calling it here.
+    //     loop_numbers(1, 2);
+    // }
 }
