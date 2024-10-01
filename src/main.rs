@@ -6,11 +6,11 @@ use numeri_a_parole::read_args;
 fn main() {
     let number_str = read_args();
 
-    let (number_without_sign, is_negative) = get_number_sign(number_str);
+    let (number_without_sign, is_negative) = get_number_sign(&number_str);
 
-    let number_parts = parse_string_to_numbers(number_without_sign);
+    let number_parts = parse_string_to_numbers(&number_without_sign);
 
-    let number_words = number_parts_to_words(number_parts);
+    let number_words = number_parts_to_words(&number_parts);
 
     println!("{} {number_words}", if is_negative { "meno" } else { "" });
 }

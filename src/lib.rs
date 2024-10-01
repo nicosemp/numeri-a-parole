@@ -24,27 +24,28 @@ pub fn read_args() -> String {
     args[1].clone() //, args[2].clone())
 }
 
-pub fn get_number_sign(number_str: String) -> (String, bool) {
+pub fn get_number_sign(number_str: &str) -> (String, bool) {
     let first_char = &number_str[..1];
     if first_char == "-" {
         let number_without_sign = number_str.chars().skip(1).collect();
         return (number_without_sign, true);
     }
 
-    (number_str, false)
+    (number_str.to_string(), false)
 }
 
-pub fn parse_string_to_numbers(mut number_str: String) -> Vec<u128> {
+pub fn parse_string_to_numbers(number_str: &str) -> Vec<u128> {
+    let mut number_str = number_str;
     let mut number_parts: Vec<u128> = vec![];
 
-    while number_str.len() > 0 {
+    while !number_str.is_empty() {
         let split_pos = if number_str.len() > 30 {
             number_str.len() - 30
         } else {
             0
         };
 
-        let last_thirty_chars = (&number_str[split_pos..]).to_string();
+        let last_thirty_chars = &number_str[split_pos..];
 
         let number_part = match last_thirty_chars.trim().parse::<u128>() {
             Ok(n) => n,
@@ -56,7 +57,7 @@ pub fn parse_string_to_numbers(mut number_str: String) -> Vec<u128> {
 
         number_parts.push(number_part);
 
-        number_str = number_str.split_at(split_pos).0.to_string();
+        number_str = &number_str[..split_pos];
     }
 
     number_parts
@@ -232,7 +233,7 @@ fn number_to_words(number: u128, delta: usize) -> String {
     number_words
 }
 
-pub fn number_parts_to_words(number_parts: Vec<u128>) -> String {
+pub fn number_parts_to_words(number_parts: &Vec<u128>) -> String {
     let mut words = String::new();
 
     for (i, part) in number_parts.iter().enumerate() {
