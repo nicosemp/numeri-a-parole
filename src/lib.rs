@@ -158,22 +158,25 @@ fn triplet_to_word(triplet: usize, triplet_index: usize) -> String {
     }
 }
 
+fn number_to_word(number: u128) -> String {
+    if number == 0 {
+        return "zero".to_string();
+    }
+    split_triplets(number)
+        .enumerate()
+        .map(|(i, t)| triplet_to_word(t, i))
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect::<String>()
+}
+
 pub fn loop_numbers(min: u128, max: u128) {
     let mut max_len: usize = 0;
     let mut longest_numbers: Vec<String> = vec![];
 
     for number in min..=max {
-        let number_word = if number == 0 {
-            "zero".to_string()
-        } else {
-            split_triplets(number)
-                .enumerate()
-                .map(|(i, t)| triplet_to_word(t, i))
-                .collect::<Vec<_>>()
-                .into_iter()
-                .rev()
-                .collect::<String>()
-        };
+        let number_word = number_to_word(number);
 
         println!("{number} = {number_word}");
 
@@ -212,14 +215,45 @@ mod tests {
     }
 
     #[test]
+    fn test_split_triplets_single() {
+        let result: Vec<usize> = split_triplets(42).collect();
+        assert_eq!(result, vec![42]);
+    }
+
+    #[test]
+    fn test_split_triplets_zero() {
+        let result: Vec<usize> = split_triplets(0).collect();
+        assert_eq!(result, vec![]);
+    }
+
+    #[test]
+    fn test_elaborate_hundreds_digit_zero() {
+        let result = elaborate_hundreds_digit(0, 5);
+        assert_eq!(result, "");
+    }
+
+    #[test]
     fn test_elaborate_hundreds_digit() {
         let result = elaborate_hundreds_digit(1, 2);
         assert_eq!(result, "cento");
     }
+
     #[test]
     fn test_elaborate_hundreds_digit_eight() {
         let result = elaborate_hundreds_digit(1, 8);
         assert_eq!(result, "cent");
+    }
+
+    #[test]
+    fn test_elaborate_hundreds_digit_two() {
+        let result = elaborate_hundreds_digit(2, 5);
+        assert_eq!(result, "duecento");
+    }
+
+    #[test]
+    fn test_elaborate_hundreds_digit_two_eight() {
+        let result = elaborate_hundreds_digit(2, 8);
+        assert_eq!(result, "duecent");
     }
 
     #[test]
@@ -241,15 +275,15 @@ mod tests {
     }
 
     #[test]
-    fn test_elaborate_units_word() {
-        let result = elaborate_units_word(5);
-        assert_eq!(result, "cinque");
+    fn test_elaborate_units_word_zero() {
+        let result = elaborate_units_word(0);
+        assert_eq!(result, "");
     }
 
     #[test]
-    fn test_triplet_to_word() {
-        let result = triplet_to_word(123, 0);
-        assert_eq!(result, "centoventitre");
+    fn test_elaborate_units_word() {
+        let result = elaborate_units_word(5);
+        assert_eq!(result, "cinque");
     }
 
     #[test]
@@ -259,15 +293,98 @@ mod tests {
     }
 
     #[test]
+    fn test_triplet_to_word_uno() {
+        let result = triplet_to_word(1, 0);
+        assert_eq!(result, "uno");
+    }
+
+    #[test]
+    fn test_triplet_to_word_mille() {
+        let result = triplet_to_word(1, 1);
+        assert_eq!(result, "mille");
+    }
+
+    #[test]
+    fn test_triplet_to_word_un_milione() {
+        let result = triplet_to_word(1, 2);
+        assert_eq!(result, "un milione ");
+    }
+
+    #[test]
+    fn test_triplet_to_word_un_miliardo() {
+        let result = triplet_to_word(1, 3);
+        assert_eq!(result, "un miliardo ");
+    }
+
+    #[test]
+    fn test_triplet_to_word() {
+        let result = triplet_to_word(123, 0);
+        assert_eq!(result, "centoventitre");
+    }
+
+    #[test]
+    fn test_triplet_to_word_pure_hundreds() {
+        let result = triplet_to_word(300, 0);
+        assert_eq!(result, "trecento");
+    }
+
+    #[test]
+    fn test_triplet_to_word_elision_tens() {
+        // 288: duecent + ottant + otto — elision on both hundreds (tens==8) and tens (units==8)
+        let result = triplet_to_word(288, 0);
+        assert_eq!(result, "duecentottantotto");
+    }
+
+    #[test]
+    fn test_triplet_to_word_elision_units() {
+        // 121: cento + vent + uno — elision on tens (units==1), "venti" → "vent"
+        let result = triplet_to_word(121, 0);
+        assert_eq!(result, "centoventuno");
+    }
+
+    #[test]
     fn test_triplet_to_word_188_mrd() {
         let result = triplet_to_word(188, 3);
         assert_eq!(result, "centottantotto miliardi ");
     }
 
     #[test]
+    fn test_number_to_word_zero() {
+        assert_eq!(number_to_word(0), "zero");
+    }
+
+    #[test]
+    fn test_number_to_word_simple() {
+        assert_eq!(number_to_word(42), "quarantadue");
+    }
+
+    #[test]
+    fn test_number_to_word_mille() {
+        assert_eq!(number_to_word(1000), "mille");
+    }
+
+    #[test]
+    fn test_number_to_word_milione() {
+        assert_eq!(number_to_word(1_000_000), "un milione ");
+    }
+
+    #[test]
+    fn test_number_to_word_miliardo() {
+        assert_eq!(number_to_word(1_000_000_000), "un miliardo ");
+    }
+
+    #[test]
+    fn test_number_to_word_large() {
+        // 1_234_567 = un milione + duecentotrentaquattromila + cinquecentosessantasette
+        assert_eq!(
+            number_to_word(1_234_567),
+            "un milione duecentotrentaquattromilacinquecentosessantasette"
+        );
+    }
+
+    #[test]
     fn test_loop_numbers() {
-        // This function prints output, so you might want to capture the output and test it.
-        // For simplicity, we are just calling it here.
+        // Smoke test: ensures no panic
         loop_numbers(1, 2);
     }
 }
