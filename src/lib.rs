@@ -52,58 +52,55 @@ pub fn parse_input() -> (u128, u128, bool) {
     (min, max, false)
 }
 
-fn split_triplets(num: u128) -> Vec<usize> {
+fn split_triplets(num: u128) -> impl Iterator<Item = usize> {
     let mut remaining = num;
-    let mut triplets: Vec<usize> = vec![];
-
-    while remaining > 0 {
-        let triplet: usize = (remaining % 1000).try_into().unwrap();
-        triplets.push(triplet);
-        remaining /= 1000;
-    }
-
-    triplets
+    std::iter::from_fn(move || {
+        if remaining > 0 {
+            let triplet = (remaining % 1000) as usize;
+            remaining /= 1000;
+            Some(triplet)
+        } else {
+            None
+        }
+    })
 }
 
 fn elaborate_hundreds_digit(hundreds_digit: usize, tens_digit: usize) -> String {
-    if hundreds_digit == 0 {
-        return "".to_string();
+    match hundreds_digit {
+        0 => String::new(),
+        1 => {
+            if tens_digit == 8 {
+                "cent".into()
+            } else {
+                "cento".into()
+            }
+        }
+        n => format!(
+            "{}cent{}",
+            constants::UNDER_TWENTY[n],
+            if tens_digit == 8 { "" } else { "o" }
+        ),
     }
-
-    let mut hundred_word = "".to_owned();
-    if hundreds_digit != 1 {
-        hundred_word.push_str(constants::UNDER_TWENTY[hundreds_digit]);
-    };
-    hundred_word.push_str("cent");
-    if tens_digit != 8 {
-        hundred_word.push_str("o")
-    };
-
-    return hundred_word;
 }
 
 fn elaborate_tens_digit(tens_digit: usize, units_digit: usize) -> String {
     let word = constants::TENS[tens_digit];
-    if units_digit == 1 || units_digit == 8 {
-        return (&word[..word.len() - 1]).to_string();
-    } else {
-        return word.to_string();
+    match units_digit {
+        1 | 8 => word[..word.len() - 1].to_string(),
+        _ => word.to_string(),
     }
 }
 
 fn elaborate_units_word(units_digit: usize) -> String {
-    if units_digit == 0 {
-        return "".to_string();
-    };
-
-    return constants::UNDER_TWENTY[units_digit].to_string();
+    match units_digit {
+        0 => String::new(),
+        n => constants::UNDER_TWENTY[n].to_string(),
+    }
 }
 
 fn triplet_to_word(triplet: usize, triplet_index: usize) -> String {
-    let mut words: Vec<&str> = vec![];
-
     // Magnitude for 'mila', 'milioni', 'miliardi', ...
-    let magnitude_ending_char = if triplet == 1 {
+    let magnitude_ending = if triplet == 1 {
         if triplet_index % 2 == 0 {
             "e "
         } else {
@@ -114,99 +111,93 @@ fn triplet_to_word(triplet: usize, triplet_index: usize) -> String {
     };
     let magnitude = match triplet_index {
         1 => "mila".to_string(),
-        2 => [" milion", magnitude_ending_char].concat(),
-        3 => [" miliard", magnitude_ending_char].concat(),
-        4 => [" bilion", magnitude_ending_char].concat(),
-        5 => [" biliard", magnitude_ending_char].concat(),
-        6 => [" trilion", magnitude_ending_char].concat(),
-        7 => [" triliard", magnitude_ending_char].concat(),
-        8 => [" quadrilion", magnitude_ending_char].concat(),
-        9 => [" quadriliard", magnitude_ending_char].concat(),
-        10 => [" quintilion", magnitude_ending_char].concat(),
-        11 => [" quintiliard", magnitude_ending_char].concat(),
-        12 => [" sestilion", magnitude_ending_char].concat(),
+        2 => format!(" milion{magnitude_ending}"),
+        3 => format!(" miliard{magnitude_ending}"),
+        4 => format!(" bilion{magnitude_ending}"),
+        5 => format!(" biliard{magnitude_ending}"),
+        6 => format!(" trilion{magnitude_ending}"),
+        7 => format!(" triliard{magnitude_ending}"),
+        8 => format!(" quadrilion{magnitude_ending}"),
+        9 => format!(" quadriliard{magnitude_ending}"),
+        10 => format!(" quintilion{magnitude_ending}"),
+        11 => format!(" quintiliard{magnitude_ending}"),
+        12 => format!(" sestilion{magnitude_ending}"),
         _ => String::new(),
     };
 
-    if triplet == 0 {
-        return "".to_string();
-    } else if triplet == 1 {
-        if triplet_index == 0 {
-            return "uno".to_string();
-        }
+    match triplet {
+        0 => String::new(),
+        1 => match triplet_index {
+            0 => "uno".to_string(),
+            1 => "mille".to_string(),
+            _ => format!("un{magnitude}"),
+        },
+        _ => {
+            let hundreds_digit = triplet / 100;
+            let tens_digit = triplet / 10 % 10;
+            let units_digit = triplet % 10;
+            let two_digit_remainder = triplet % 100;
 
-        if triplet_index == 1 {
-            return "mille".to_string();
-        }
+            let body = if two_digit_remainder < 20 {
+                format!(
+                    "{}{}",
+                    elaborate_hundreds_digit(hundreds_digit, tens_digit),
+                    constants::UNDER_TWENTY[two_digit_remainder],
+                )
+            } else {
+                format!(
+                    "{}{}{}",
+                    elaborate_hundreds_digit(hundreds_digit, tens_digit),
+                    elaborate_tens_digit(tens_digit, units_digit),
+                    elaborate_units_word(units_digit),
+                )
+            };
 
-        let mut word = "un".to_owned();
-        word.push_str(&magnitude);
-        return word;
+            format!("{body}{magnitude}")
+        }
     }
-
-    let hundreds_digit = triplet / 100;
-    let tens_digit = triplet / 10 % 10;
-    let units_digit = triplet % 10;
-
-    // Hundreds
-    let hundred_word = elaborate_hundreds_digit(hundreds_digit, tens_digit);
-    words.push(&hundred_word);
-
-    // Check if the remaining number can be found in the UNDER_TWENTY array
-    let two_digit_remainder = triplet % 100;
-    if two_digit_remainder < 20 {
-        words.push(constants::UNDER_TWENTY[two_digit_remainder]);
-        words.push(&magnitude);
-        return words.join("");
-    };
-
-    // Tens
-    let tens_word = elaborate_tens_digit(tens_digit, units_digit);
-    words.push(&tens_word);
-
-    // Units
-    let units_word = elaborate_units_word(units_digit);
-    words.push(&units_word);
-
-    // Add magnitude at the end
-    words.push(&magnitude);
-
-    return words.join("");
 }
 
 pub fn loop_numbers(min: u128, max: u128) {
     let mut max_len: usize = 0;
-    let mut longest_number = String::new();
+    let mut longest_numbers: Vec<String> = vec![];
 
     for number in min..=max {
-        if number == 0 {
-            println!("{number} = zero");
-            continue;
-        }
-
-        let triplets = split_triplets(number);
-
-        let mut triplet_words: Vec<String> = vec![];
-
-        for (i, triplet) in triplets.iter().enumerate() {
-            let triplet_word = triplet_to_word(*triplet, i);
-            triplet_words.push(triplet_word);
-        }
-
-        let triplet_words_reversed: Vec<String> = triplet_words.into_iter().rev().collect();
-        let number_word = triplet_words_reversed.concat();
+        let number_word = if number == 0 {
+            "zero".to_string()
+        } else {
+            split_triplets(number)
+                .enumerate()
+                .map(|(i, t)| triplet_to_word(t, i))
+                .collect::<Vec<_>>()
+                .into_iter()
+                .rev()
+                .collect::<String>()
+        };
 
         println!("{number} = {number_word}");
 
-        // Save longest number
-        if min != max && number_word.len() > max_len {
-            max_len = number_word.len();
-            longest_number = number_word;
+        if min != max {
+            match number_word.len().cmp(&max_len) {
+                std::cmp::Ordering::Greater => {
+                    max_len = number_word.len();
+                    longest_numbers = vec![number_word];
+                }
+                std::cmp::Ordering::Equal => longest_numbers.push(number_word),
+                std::cmp::Ordering::Less => {}
+            }
         }
     }
 
     if min != max {
-        println!("\nLongest number (first encountered): {longest_number}");
+        println!(
+            "\nLongest numbers ({} found, length {}):",
+            longest_numbers.len(),
+            max_len
+        );
+        for word in &longest_numbers {
+            println!("  {word}");
+        }
     }
 }
 
@@ -216,7 +207,7 @@ mod tests {
 
     #[test]
     fn test_split_triplets() {
-        let result = split_triplets(1234567890);
+        let result: Vec<usize> = split_triplets(1234567890).collect();
         assert_eq!(result, vec![890, 567, 234, 1]);
     }
 
